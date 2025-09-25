@@ -35,7 +35,7 @@ export function ItemList({ items, onDelete }: ItemListProps) {
             <div className="flex flex-col">
               <span className="text-gray-900 font-medium">{item.name}</span>
               <span className="text-gray-500 text-sm">
-                SKU: {item.sku || "—"} | Qty: {item.quantity}
+                SKU: {item.sku || "—"} | Qty: {item.quantity} | {item.category}
               </span>
             </div>
           </div>

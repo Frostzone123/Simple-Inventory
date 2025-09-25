@@ -4,91 +4,80 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { NavBar } from "../components/NavBar";
 import { BottomNav } from "../components/BottomNav";
-import { useItems } from "../../../context/ItemContext";
+import { useItems, Category } from "../../../context/ItemContext";
 
 export default function AddPage() {
-  const router = useRouter();
   const { addItem } = useItems();
+  const router = useRouter();
+
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState("");
   const [sku, setSku] = useState("");
+  const [category, setCategory] = useState<Category>("Material");
   const [image, setImage] = useState<string | undefined>(undefined);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-    }
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onloadend = () => setImage(reader.result as string);
+    reader.readAsDataURL(file);
   };
 
   const handleAdd = () => {
     if (!name || !quantity) return;
-    addItem(name, quantity, sku, image);
+    addItem(name, quantity, sku, category, image);
     router.push("/");
   };
 
   return (
+    
     <main className="min-h-screen bg-gray-100 pb-16">
       <NavBar title="Add Item" />
       <div className="max-w-md mx-auto p-4 space-y-4">
         <input
-          type="text"
-          placeholder="Item Name"
+          className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black placeholder-gray-400 transition"
+          placeholder="Item name"
           value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="w-full p-3 rounded-lg border border-gray-300 
-                     focus:outline-none focus:ring-2 focus:ring-blue-400 
-                     text-black placeholder-gray-400 transition"
-        />
-        <input
-          type="number"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          placeholder="Quantity"
-          value={quantity}
-          onChange={(e) => setQuantity(e.target.value)}
-          className="w-full p-3 rounded-lg border border-gray-300 
-                     focus:outline-none focus:ring-2 focus:ring-blue-400 
-                     text-black placeholder-gray-400 transition"
-        />
-        <input
-          type="text"
-          placeholder="SKU"
-          value={sku}
-          onChange={(e) => setSku(e.target.value)}
-          className="w-full p-3 rounded-lg border border-gray-300 
-                     focus:outline-none focus:ring-2 focus:ring-blue-400 
-                     text-black placeholder-gray-400 transition"
-        />
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleImageUpload}
-          className="w-full p-3 rounded-lg border border-gray-300 
-                     focus:outline-none focus:ring-2 focus:ring-blue-400 
-                     text-black placeholder-gray-400 transition"
+          onChange={e => setName(e.target.value)}
         />
 
-        {image && (
-          <img
-            src={image}
-            alt="Preview"
-            className="mt-2 w-24 h-24 object-cover rounded-lg"
+        <input
+          className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black placeholder-gray-400 transition"
+          placeholder="Quantity"
+          type="number"
+          value={quantity}
+          onChange={e => setQuantity(e.target.value)}
         />
-        )}
+
+        <input
+          className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black placeholder-gray-400 transition"    
+          placeholder="SKU"
+          value={sku}
+          onChange={e => setSku(e.target.value)}
+        />
+
+        <select
+          className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black placeholder-gray-400 transition" 
+          value={category}
+          onChange={e => setCategory(e.target.value as Category)}
+        >
+          <option value="Material">Material</option>
+          <option value="Flowers">Flowers</option>
+        </select>
+
+        <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black placeholder-gray-400 transition"
+        />
+        {image && <img src={image} className="w-28 h-28 object-cover rounded-md" alt="preview" />}
+
         <button
           onClick={handleAdd}
-          className="w-full bg-blue-500 hover:bg-blue-600 
-                     text-white py-3 rounded-lg font-semibold transition"
+          className="w-full bg-blue-500 text-white p-3 rounded-lg"
         >
-          Add Item
+          Add
         </button>
       </div>
-      <BottomNav />
+      <BottomNav/>
     </main>
   );
 }
