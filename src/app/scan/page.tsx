@@ -57,8 +57,8 @@ export default function ScanPage() {
       <div className="w-full max-w-md mx-auto flex justify-center">
         {cameraStarted ? (
           <BarcodeScannerComponent
-            width={300}
-            height={300}
+            width={400}
+            height={400}
             videoConstraints={{ facingMode: { exact: "environment" } }}
             onUpdate={(err, result) => {
               if (result) handleUpdateQuantity(result.getText());
