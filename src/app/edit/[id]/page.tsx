@@ -14,7 +14,7 @@ export default function EditPage() {
   const item = items.find(i => i.id === id);
 
   const [name, setName] = useState(item?.name ?? "");
-  const [quantity, setQuantity] = useState(item?.quantity ?? "");
+  const [quantity, setQuantity] = useState<number>(1);
   const [sku, setSku] = useState(item?.sku ?? "");
   const [category, setCategory] = useState<Category>(item?.category ?? "Material");
   const [image, setImage] = useState<string | undefined>(item?.image);
@@ -25,7 +25,13 @@ export default function EditPage() {
 
   const handleSave = () => {
     if (!item) return;
-    updateItem(item.id, name, quantity, sku, category, image);
+    updateItem(item.id, {
+      name,
+      quantity,
+      sku,
+      category,
+      image,
+    });
     router.push("/");
   };
 
@@ -42,10 +48,11 @@ export default function EditPage() {
 
         <input
           className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black placeholder-gray-400 transition"
-          placeholder="Quantity"
-          type="number"
+           type="number"
           value={quantity}
-          onChange={e => setQuantity(e.target.value)}
+          onChange={e => setQuantity(Number(e.target.value))}
+          min={0}
+          placeholder="Quantity"
         />
 
         <input

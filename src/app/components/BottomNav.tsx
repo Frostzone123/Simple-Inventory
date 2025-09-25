@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { HomeIcon, PlusIcon } from "@heroicons/react/24/outline";
+import { List, Plus, Camera } from "lucide-react";
 
 export function BottomNav() {
   return (
@@ -13,6 +14,9 @@ export function BottomNav() {
         <Link href="/add" className="flex flex-col items-center text-blue-500 hover:text-blue-600">
           <PlusIcon className="h-6 w-6" />
           <span className="text-xs font-medium mt-1">Add</span>
+        </Link>
+        <Link href="/scan" className="flex flex-col items-center text-gray-500">
+          <Camera size={24} />
         </Link>
       </div>
     </div>

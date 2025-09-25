@@ -9,9 +9,11 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "lucide-react": "^0.544.0",
     "next": "15.5.4",
     "react": "19.1.0",
-    "react-dom": "19.1.0"
+    "react-dom": "19.1.0",
+    "react-qr-barcode-scanner": "^2.1.14"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

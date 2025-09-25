@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { NavBar } from "../components/NavBar";
 import { BottomNav } from "../components/BottomNav";
 import { useItems, Category } from "../../../context/ItemContext";
@@ -11,7 +11,7 @@ export default function AddPage() {
   const router = useRouter();
 
   const [name, setName] = useState("");
-  const [quantity, setQuantity] = useState("");
+  const [quantity, setQuantity] = useState<number>(1);
   const [sku, setSku] = useState("");
   const [category, setCategory] = useState<Category>("Material");
   const [image, setImage] = useState<string | undefined>(undefined);
@@ -25,10 +25,17 @@ export default function AddPage() {
   };
 
   const handleAdd = () => {
-    if (!name || !quantity) return;
+     if (!name || quantity < 1) return;
     addItem(name, quantity, sku, category, image);
     router.push("/");
   };
+
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const scannedSku = searchParams.get("sku");
+    if (scannedSku) setSku(scannedSku);
+  }, [searchParams]);
 
   return (
     
@@ -44,10 +51,11 @@ export default function AddPage() {
 
         <input
           className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black placeholder-gray-400 transition"
-          placeholder="Quantity"
           type="number"
           value={quantity}
-          onChange={e => setQuantity(e.target.value)}
+          onChange={e => setQuantity(Number(e.target.value))}
+          min={1}
+          placeholder="Quantity"
         />
 
         <input
@@ -55,6 +63,7 @@ export default function AddPage() {
           placeholder="SKU"
           value={sku}
           onChange={e => setSku(e.target.value)}
+          readOnly={!!searchParams.get("sku")}
         />
 
         <select

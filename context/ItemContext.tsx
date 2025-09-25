@@ -1,4 +1,3 @@
-// context/ItemContext.tsx
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
@@ -6,20 +5,25 @@ import { nanoid } from "nanoid";
 
 export type Category = "Material" | "Flowers";
 
+export type HistoryEntry = {
+  quantity: number;
+  date: string; // ISO string
+};
+
 export type Item = {
   id: string;
   name: string;
-  quantity: string;
+  quantity: number;
   sku: string;
-  history: string[];
-  image?: string;
   category: Category;
+  image?: string;
+  history: HistoryEntry[];
 };
 
 type ItemContextType = {
   items: Item[];
-  addItem: (name: string, quantity: string, sku: string, category: Category, image?: string) => void;
-  updateItem: (id: string, name: string, quantity: string, sku: string, category: Category, image?: string) => void;
+  addItem: (name: string, quantity: number, sku: string, category: Category, image?: string) => void;
+  updateItem: (id: string, updates: Partial<Omit<Item, "id" | "history">>) => void;
   deleteItem: (id: string) => void;
 };
 
@@ -28,33 +32,53 @@ const ItemContext = createContext<ItemContextType | undefined>(undefined);
 export function ItemProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<Item[]>([]);
 
+  // Load items from localStorage on mount
   useEffect(() => {
     const stored = localStorage.getItem("items");
-    if (stored) setItems(JSON.parse(stored));
+    if (stored) {
+      try {
+        setItems(JSON.parse(stored));
+      } catch {
+        setItems([]);
+      }
+    }
   }, []);
 
+  // Persist items to localStorage whenever they change
   useEffect(() => {
     localStorage.setItem("items", JSON.stringify(items));
   }, [items]);
 
-  const addItem = (name: string, quantity: string, sku: string, category: Category, image?: string) => {
-    setItems(prev => [
-      ...prev,
-      { id: nanoid(), name, quantity, sku, category, history: [quantity], image },
-    ]);
+  const addItem = (name: string, quantity: number, sku: string, category: Category, image?: string) => {
+    const newItem: Item = {
+      id: nanoid(),
+      name,
+      quantity,
+      sku,
+      category,
+      image,
+      history: [{ quantity, date: new Date().toISOString() }],
+    };
+    setItems(prev => [...prev, newItem]);
   };
 
-  const updateItem = (id: string, name: string, quantity: string, sku: string, category: Category, image?: string) => {
+  const updateItem = (id: string, updates: Partial<Omit<Item, "id" | "history">>) => {
     setItems(prev =>
-      prev.map(item =>
-        item.id === id
-          ? { ...item, name, quantity, sku, category, image: image ?? item.image, history: [...item.history, quantity] }
-          : item
-      )
+      prev.map(item => {
+        if (item.id !== id) return item;
+        const newQuantity = updates.quantity ?? item.quantity;
+        return {
+          ...item,
+          ...updates,
+          history: [...item.history, { quantity: newQuantity, date: new Date().toISOString() }],
+        };
+      })
     );
   };
 
-  const deleteItem = (id: string) => setItems(prev => prev.filter(item => item.id !== id));
+  const deleteItem = (id: string) => {
+    setItems(prev => prev.filter(item => item.id !== id));
+  };
 
   return (
     <ItemContext.Provider value={{ items, addItem, updateItem, deleteItem }}>
@@ -64,7 +88,7 @@ export function ItemProvider({ children }: { children: ReactNode }) {
 }
 
 export function useItems() {
-  const ctx = useContext(ItemContext);
-  if (!ctx) throw new Error("useItems must be used within ItemProvider");
-  return ctx;
+  const context = useContext(ItemContext);
+  if (!context) throw new Error("useItems must be used within an ItemProvider");
+  return context;
 }
