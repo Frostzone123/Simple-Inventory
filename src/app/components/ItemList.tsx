@@ -31,11 +31,13 @@ export function ItemList({ items, onDelete }: ItemListProps) {
               </div>
             )}
 
-            {/* Item info */}
+            {/* Item info (name + qty on same line) */}
             <div className="flex flex-col">
-              <span className="text-gray-900 font-medium">{item.name}</span>
+              <span className="text-gray-900 font-medium">
+                {item.name} <span className="text-gray-500 text-sm">(Qty: {item.quantity})</span>
+              </span>
               <span className="text-gray-500 text-sm">
-                SKU: {item.sku || "—"} | Qty: {item.quantity} | {item.category}
+                SKU: {item.sku || "—"} | {item.category}
               </span>
             </div>
           </div>
