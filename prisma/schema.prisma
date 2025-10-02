@@ -30,4 +30,5 @@ model User {
   username String @unique
   password String
   createdAt DateTime @default(now())
+  isAdmin   Boolean  @default(false)
 }

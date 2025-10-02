@@ -32,27 +32,37 @@ const ItemContext = createContext<ItemContextType | undefined>(undefined);
 export function ItemProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<Item[]>([]);
 
-  const fetchItems = async () => {
-    try {
-      const res = await fetch("/api/items");
-      if (!res.ok) throw new Error("Failed to fetch items");
-      const data: Item[] = await res.json();
-      setItems(data);
-    } catch (err) {
-      console.error(err);
-    }
+  // Get token from localStorage
+  const getToken = () => {
+    return localStorage.getItem("token") || null;
   };
+
+  const fetchItems = async () => {
+  const token = getToken();
+  if (!token) return; // user not logged in, skip
+  try {
+    const res = await fetch("/api/items", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!res.ok) throw new Error("Failed to fetch items");
+    const data: Item[] = await res.json();
+    setItems(data);
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   const addItem = async (name: string, quantity: number, sku: string, category: Category, image?: string) => {
     try {
+      const token = getToken();
       const res = await fetch("/api/items", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify({ name, quantity, sku, category, image }),
       });
       if (!res.ok) throw new Error("Failed to add item");
       const newItem: Item = await res.json();
-      setItems(prev => [...prev, newItem]);
+      setItems((prev) => [...prev, newItem]);
     } catch (err) {
       console.error(err);
     }
@@ -60,14 +70,15 @@ export function ItemProvider({ children }: { children: ReactNode }) {
 
   const updateItem = async (id: string, updates: Partial<Omit<Item, "id" | "history">>) => {
     try {
+      const token = getToken();
       const res = await fetch(`/api/items/${id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(updates),
       });
       if (!res.ok) throw new Error("Failed to update item");
       const updated: Item = await res.json();
-      setItems(prev => prev.map(item => (item.id === id ? updated : item)));
+      setItems((prev) => prev.map((item) => (item.id === id ? updated : item)));
     } catch (err) {
       console.error(err);
     }
@@ -75,9 +86,13 @@ export function ItemProvider({ children }: { children: ReactNode }) {
 
   const deleteItem = async (id: string) => {
     try {
-      const res = await fetch(`/api/items/${id}`, { method: "DELETE" });
+      const token = getToken();
+      const res = await fetch(`/api/items/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) throw new Error("Failed to delete item");
-      setItems(prev => prev.filter(item => item.id !== id));
+      setItems((prev) => prev.filter((item) => item.id !== id));
     } catch (err) {
       console.error(err);
     }
@@ -85,7 +100,9 @@ export function ItemProvider({ children }: { children: ReactNode }) {
 
   // Fetch items on mount
   useEffect(() => {
-    fetchItems();
+    try {
+      fetchItems();
+    } catch {}
   }, []);
 
   return (
