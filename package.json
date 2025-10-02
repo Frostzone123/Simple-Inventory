@@ -9,8 +9,13 @@
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
+    "@prisma/client": "^6.16.3",
+    "bcryptjs": "^3.0.2",
+    "jsonwebtoken": "^9.0.2",
     "lucide-react": "^0.544.0",
+    "mysql2": "^3.15.1",
     "next": "15.5.4",
+    "prisma": "^6.16.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-qr-barcode-scanner": "^2.1.14"

@@ -1,7 +1,6 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { nanoid } from "nanoid";
 
 export type Category = "Material" | "Flowers";
 
@@ -22,9 +21,10 @@ export type Item = {
 
 type ItemContextType = {
   items: Item[];
-  addItem: (name: string, quantity: number, sku: string, category: Category, image?: string) => void;
-  updateItem: (id: string, updates: Partial<Omit<Item, "id" | "history">>) => void;
-  deleteItem: (id: string) => void;
+  fetchItems: () => Promise<void>;
+  addItem: (name: string, quantity: number, sku: string, category: Category, image?: string) => Promise<void>;
+  updateItem: (id: string, updates: Partial<Omit<Item, "id" | "history">>) => Promise<void>;
+  deleteItem: (id: string) => Promise<void>;
 };
 
 const ItemContext = createContext<ItemContextType | undefined>(undefined);
@@ -32,56 +32,64 @@ const ItemContext = createContext<ItemContextType | undefined>(undefined);
 export function ItemProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<Item[]>([]);
 
-  // Load items from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem("items");
-    if (stored) {
-      try {
-        setItems(JSON.parse(stored));
-      } catch {
-        setItems([]);
-      }
+  const fetchItems = async () => {
+    try {
+      const res = await fetch("/api/items");
+      if (!res.ok) throw new Error("Failed to fetch items");
+      const data: Item[] = await res.json();
+      setItems(data);
+    } catch (err) {
+      console.error(err);
     }
+  };
+
+  const addItem = async (name: string, quantity: number, sku: string, category: Category, image?: string) => {
+    try {
+      const res = await fetch("/api/items", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, quantity, sku, category, image }),
+      });
+      if (!res.ok) throw new Error("Failed to add item");
+      const newItem: Item = await res.json();
+      setItems(prev => [...prev, newItem]);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const updateItem = async (id: string, updates: Partial<Omit<Item, "id" | "history">>) => {
+    try {
+      const res = await fetch(`/api/items/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error("Failed to update item");
+      const updated: Item = await res.json();
+      setItems(prev => prev.map(item => (item.id === id ? updated : item)));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const deleteItem = async (id: string) => {
+    try {
+      const res = await fetch(`/api/items/${id}`, { method: "DELETE" });
+      if (!res.ok) throw new Error("Failed to delete item");
+      setItems(prev => prev.filter(item => item.id !== id));
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // Fetch items on mount
+  useEffect(() => {
+    fetchItems();
   }, []);
 
-  // Persist items to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem("items", JSON.stringify(items));
-  }, [items]);
-
-  const addItem = (name: string, quantity: number, sku: string, category: Category, image?: string) => {
-    const newItem: Item = {
-      id: nanoid(),
-      name,
-      quantity,
-      sku,
-      category,
-      image,
-      history: [{ quantity, date: new Date().toISOString() }],
-    };
-    setItems(prev => [...prev, newItem]);
-  };
-
-  const updateItem = (id: string, updates: Partial<Omit<Item, "id" | "history">>) => {
-    setItems(prev =>
-      prev.map(item => {
-        if (item.id !== id) return item;
-        const newQuantity = updates.quantity ?? item.quantity;
-        return {
-          ...item,
-          ...updates,
-          history: [...item.history, { quantity: newQuantity, date: new Date().toISOString() }],
-        };
-      })
-    );
-  };
-
-  const deleteItem = (id: string) => {
-    setItems(prev => prev.filter(item => item.id !== id));
-  };
-
   return (
-    <ItemContext.Provider value={{ items, addItem, updateItem, deleteItem }}>
+    <ItemContext.Provider value={{ items, fetchItems, addItem, updateItem, deleteItem }}>
       {children}
     </ItemContext.Provider>
   );
