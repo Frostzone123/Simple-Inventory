@@ -1,11 +1,9 @@
-// src/app/api/items/route.ts
-import { prisma } from "../../../../lib/prisma";// make sure this path is correct
+import { prisma } from "../../../../lib/prisma";
 import jwt from "jsonwebtoken";
 import { NextRequest } from "next/server";
 
 const JWT_SECRET = process.env.JWT_SECRET || "supersecret";
 
-// Utility to verify JWT token
 async function verifyToken(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) throw new Error("Unauthorized");
@@ -15,10 +13,9 @@ async function verifyToken(req: NextRequest) {
   return payload;
 }
 
-// GET all items
 export async function GET(req: NextRequest) {
   try {
-    await verifyToken(req); // Only authorized users
+    await verifyToken(req);
 
     const items = await prisma.item.findMany({
       include: { history: true },
@@ -32,10 +29,9 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// POST a new item
 export async function POST(req: NextRequest) {
   try {
-    await verifyToken(req); // Only authorized users
+    await verifyToken(req);
 
     const body = await req.json();
     const { name, quantity, sku, category, image } = body;

@@ -10,7 +10,7 @@ export interface Item {
   quantity: number;
   sku?: string;
   category: Category;
-  image?: string; // filename
+  image?: string;
   history?: { id: string; quantity: number; createdAt: string }[];
 }
 
@@ -39,12 +39,14 @@ export const ItemProvider = ({ children }: ProviderProps) => {
   const [items, setItems] = useState<Item[]>([]);
   const [loading, setLoading] = useState(false);
 
-  const getToken = () => localStorage.getItem("token") || "";
+  const getToken = () => localStorage.getItem("token");
 
   const fetchItems = async () => {
     setLoading(true);
     try {
       const token = getToken();
+      if (!token) throw new Error("Not logged in");
+
       const res = await fetch("/api/items", {
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -52,8 +54,7 @@ export const ItemProvider = ({ children }: ProviderProps) => {
       const data: Item[] = await res.json();
       setItems(data);
     } catch (err) {
-      console.error("fetchItems error:", err);
-      setItems([]); // ensure items is at least an empty array
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -62,42 +63,42 @@ export const ItemProvider = ({ children }: ProviderProps) => {
   const addItem = async (item: Omit<Item, "id" | "history">) => {
     try {
       const token = getToken();
+      if (!token) throw new Error("Not logged in");
+
       const res = await fetch("/api/items", {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(item),
       });
       if (!res.ok) throw new Error("Failed to add item");
       await fetchItems();
     } catch (err) {
-      console.error("addItem error:", err);
+      console.error(err);
     }
   };
 
   const updateItem = async (id: string, updates: Partial<Omit<Item, "id" | "history">>) => {
     try {
       const token = getToken();
+      if (!token) throw new Error("Not logged in");
+
       const res = await fetch(`/api/items/${id}`, {
         method: "PUT",
-        headers: { 
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(updates),
       });
       if (!res.ok) throw new Error("Failed to update item");
       await fetchItems();
     } catch (err) {
-      console.error("updateItem error:", err);
+      console.error(err);
     }
   };
 
   const deleteItem = async (id: string) => {
     try {
       const token = getToken();
+      if (!token) throw new Error("Not logged in");
+
       const res = await fetch(`/api/items/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
@@ -105,7 +106,7 @@ export const ItemProvider = ({ children }: ProviderProps) => {
       if (!res.ok) throw new Error("Failed to delete item");
       await fetchItems();
     } catch (err) {
-      console.error("deleteItem error:", err);
+      console.error(err);
     }
   };
 

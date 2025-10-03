@@ -9,6 +9,7 @@ import { useItems, Category } from "../../../context/ItemContext";
 export default function AddPage() {
   const { addItem } = useItems();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [name, setName] = useState("");
   const [quantity, setQuantity] = useState<number>(1);
@@ -16,30 +17,25 @@ export default function AddPage() {
   const [category, setCategory] = useState<Category>("Material");
   const [image, setImage] = useState<string | undefined>(undefined);
 
+  // Handle image upload and convert to base64
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     const reader = new FileReader();
     reader.onloadend = () => setImage(reader.result as string);
     reader.readAsDataURL(file);
   };
 
+  // Add new item
   const handleAdd = async () => {
     if (!name || quantity < 1) return;
 
-    await addItem({
-      name,
-      quantity,
-      sku,
-      category,
-      image, // Base64 string
-    });
-
+    await addItem({ name, quantity, sku, category, image });
     router.push("/");
   };
 
-  const searchParams = useSearchParams();
-
+  // Pre-fill SKU if scanned via query param
   useEffect(() => {
     const scannedSku = searchParams.get("sku");
     if (scannedSku) setSku(scannedSku);
@@ -53,14 +49,14 @@ export default function AddPage() {
           className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black placeholder-gray-400 transition"
           placeholder="Item name"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={e => setName(e.target.value)}
         />
 
         <input
           className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black placeholder-gray-400 transition"
           type="number"
           value={quantity}
-          onChange={(e) => setQuantity(Number(e.target.value))}
+          onChange={e => setQuantity(Number(e.target.value))}
           min={1}
           placeholder="Quantity"
         />
@@ -69,14 +65,14 @@ export default function AddPage() {
           className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black placeholder-gray-400 transition"
           placeholder="SKU"
           value={sku}
-          onChange={(e) => setSku(e.target.value)}
+          onChange={e => setSku(e.target.value)}
           readOnly={!!searchParams.get("sku")}
         />
 
         <select
           className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black placeholder-gray-400 transition"
           value={category}
-          onChange={(e) => setCategory(e.target.value as Category)}
+          onChange={e => setCategory(e.target.value as Category)}
         >
           <option value="Material">Material</option>
           <option value="Flowers">Flowers</option>
@@ -98,7 +94,7 @@ export default function AddPage() {
 
         <button
           onClick={handleAdd}
-          className="w-full bg-blue-500 text-white p-3 rounded-lg"
+          className="w-full bg-blue-500 text-white p-3 rounded-lg hover:bg-blue-600 transition"
         >
           Add
         </button>
