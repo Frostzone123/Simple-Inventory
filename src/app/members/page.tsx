@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { NavBar } from "../components/NavBar";
 import { BottomNav } from "../components/BottomNav";
+import { useLoading } from "../../../context/LoadingContext";
 
 interface User {
   id: number;
@@ -14,13 +15,13 @@ interface User {
 export default function MembersPage() {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [newUsername, setNewUsername] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [newIsAdmin, setNewIsAdmin] = useState(false);
 
+  const { setLoading } = useLoading();
   const token = typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
   // Fetch users
@@ -34,6 +35,7 @@ export default function MembersPage() {
       if (!res.ok) throw new Error("Failed to fetch users");
       const data: User[] = await res.json();
       setUsers(data);
+      setError("");
     } catch (err: any) {
       setError(err.message || "Error fetching users");
     } finally {
@@ -50,6 +52,7 @@ export default function MembersPage() {
     e.preventDefault();
     if (!token) return;
 
+    setLoading(true);
     try {
       const res = await fetch("/api/users", {
         method: "POST",
@@ -77,13 +80,16 @@ export default function MembersPage() {
       fetchUsers();
     } catch (err: any) {
       alert(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Toggle isAdmin for a user
+  // Toggle isAdmin
   const toggleAdmin = async (id: number, current: boolean) => {
     if (!token) return;
 
+    setLoading(true);
     try {
       const res = await fetch(`/api/users/${id}`, {
         method: "PUT",
@@ -97,15 +103,17 @@ export default function MembersPage() {
       fetchUsers();
     } catch (err: any) {
       alert(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Delete a user
+  // Delete user
   const deleteUser = async (id: number) => {
     if (!token) return;
-
     if (!confirm("Are you sure you want to delete this user?")) return;
 
+    setLoading(true);
     try {
       const res = await fetch(`/api/users/${id}`, {
         method: "DELETE",
@@ -115,6 +123,8 @@ export default function MembersPage() {
       fetchUsers();
     } catch (err: any) {
       alert(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -125,13 +135,16 @@ export default function MembersPage() {
       <div className="max-w-md mx-auto p-4 space-y-4">
         <button
           onClick={() => setShowAddForm(!showAddForm)}
-          className="w-full bg-green-500 text-white p-3 rounded-lg hover:bg-green-600 transition"
+          className="w-full bg-blue-500 text-white p-3 rounded-lg hover:bg-green-600 transition"
         >
           {showAddForm ? "Cancel" : "Add New User"}
         </button>
 
         {showAddForm && (
-          <form onSubmit={handleAddUser} className="bg-white p-4 rounded-md shadow-md space-y-3">
+          <form
+            onSubmit={handleAddUser}
+            className="bg-white p-4 rounded-md shadow-md space-y-3"
+          >
             <input
               type="text"
               placeholder="Username"
@@ -157,45 +170,49 @@ export default function MembersPage() {
               />
               <span className="text-gray-700 text-sm">Make Admin</span>
             </label>
-            <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition">
+            <button
+              type="submit"
+              className="w-full bg-blue-500 text-white py-2 rounded-md hover:bg-blue-600 transition"
+            >
               Create User
             </button>
           </form>
         )}
 
-        {loading ? (
-          <p>Loading users...</p>
-        ) : error ? (
-          <p className="text-red-500">{error}</p>
-        ) : (
-          <ul className="space-y-2">
-            {users.map((user) => (
-              <li key={user.id} className="bg-white p-3 rounded-md flex justify-between items-center shadow-sm">
-                <div>
-                  <span className="font-semibold">{user.username}</span>
-                  {user.isAdmin && <span className="ml-2 text-sm text-green-600">(Admin)</span>}
-                </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => toggleAdmin(user.id, user.isAdmin)}
-                    className="px-2 py-1 text-sm bg-yellow-400 rounded hover:bg-yellow-500"
-                  >
-                    Toggle Admin
-                  </button>
-                  <button
-                    onClick={() => deleteUser(user.id)}
-                    className="px-2 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+        {error && <p className="text-red-500">{error}</p>}
+
+        <ul className="space-y-2">
+          {users.map((user) => (
+            <li
+              key={user.id}
+              className="bg-white p-3 rounded-md flex justify-between items-center shadow-sm"
+            >
+              <div>
+                <span className="font-semibold text-black">{user.username}</span>
+                {user.isAdmin && (
+                  <span className="ml-2 text-sm text-green-600">(Admin)</span>
+                )}
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => toggleAdmin(user.id, user.isAdmin)}
+                  className="px-2 py-1 text-sm bg-yellow-400 rounded hover:bg-yellow-500"
+                >
+                  Toggle Admin
+                </button>
+                <button
+                  onClick={() => deleteUser(user.id)}
+                  className="px-2 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+                >
+                  Delete
+                </button>
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
 
-      <BottomNav/>
+      <BottomNav />
     </div>
   );
 }

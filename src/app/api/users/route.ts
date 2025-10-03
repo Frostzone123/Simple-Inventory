@@ -9,9 +9,10 @@ const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:3000";
 // Simple frontend check
 function verifyFrontend(req: NextRequest) {
   const origin = req.headers.get("origin");
-  if (origin !== FRONTEND_URL) throw new Error("Forbidden: must come from frontend");
+  if (origin && origin !== FRONTEND_URL) {
+    throw new Error("Forbidden: must come from frontend");
+  }
 }
-
 // Verify admin JWT
 async function verifyAdmin(req: NextRequest) {
   const authHeader = req.headers.get("authorization");
@@ -24,6 +25,27 @@ async function verifyAdmin(req: NextRequest) {
   return payload;
 }
 
+// ✅ GET all users (admin only)
+export async function GET(req: NextRequest) {
+  try {
+    verifyFrontend(req);     // simple frontend check
+    await verifyAdmin(req);  // admin check
+
+    const users = await prisma.user.findMany({
+      select: { id: true, username: true, isAdmin: true },
+    });
+
+    return new Response(JSON.stringify(users), { status: 200 });
+  } catch (err: any) {
+    console.error("GET /api/users error:", err);
+    const status =
+      err.message.startsWith("Forbidden") ? 403 :
+      err.message === "Unauthorized" ? 401 : 500;
+    return new Response(err.message || "Internal server error", { status });
+  }
+}
+
+// ✅ POST create new user (admin only)
 export async function POST(req: NextRequest) {
   try {
     verifyFrontend(req);     // simple frontend check
@@ -51,7 +73,9 @@ export async function POST(req: NextRequest) {
     );
   } catch (err: any) {
     console.error("POST /api/users error:", err);
-    const status = err.message === "Unauthorized" ? 401 : err.message === "Forbidden" ? 403 : 500;
+    const status =
+      err.message.startsWith("Forbidden") ? 403 :
+      err.message === "Unauthorized" ? 401 : 500;
     return new Response(err.message || "Internal server error", { status });
   }
 }

@@ -1,5 +1,6 @@
 import "./globals.css";
 import { ItemProvider } from "../../context/ItemContext";
+import { LoadingProvider } from "../../context/LoadingContext";
 
 export const metadata = {
   title: "Simple Inven",
@@ -10,7 +11,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <body>
-        <ItemProvider>{children}</ItemProvider>
+        <LoadingProvider>
+            <ItemProvider>{children}</ItemProvider>
+        </LoadingProvider>
       </body>
     </html>
   );

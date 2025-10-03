@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HomeIcon, PlusIcon } from "@heroicons/react/24/outline";
-import { Camera, UserPlus } from "lucide-react"; // UserPlus for register icon
+import { Camera, UserPlus, User } from "lucide-react"; // UserPlus for register icon
 import { useEffect, useState } from "react";
 
 type User = {
@@ -63,9 +63,9 @@ export function BottomNav() {
         </Link>
         {/* Show Register only if user is admin */}
         {user?.isAdmin && (
-          <Link href="/register" className={linkClasses("/register")}>
-            <UserPlus size={24} />
-            <span className="text-xs font-medium mt-1">Register</span>
+          <Link href="/members" className={linkClasses("/members")}>
+            <User size={24} />
+            <span className="text-xs font-medium mt-1">Members</span>
           </Link>
         )}
       </div>
