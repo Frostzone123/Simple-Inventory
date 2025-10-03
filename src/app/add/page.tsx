@@ -24,9 +24,17 @@ export default function AddPage() {
     reader.readAsDataURL(file);
   };
 
-  const handleAdd = () => {
-     if (!name || quantity < 1) return;
-    addItem(name, quantity, sku, category, image);
+  const handleAdd = async () => {
+    if (!name || quantity < 1) return;
+
+    await addItem({
+      name,
+      quantity,
+      sku,
+      category,
+      image, // Base64 string
+    });
+
     router.push("/");
   };
 
@@ -38,7 +46,6 @@ export default function AddPage() {
   }, [searchParams]);
 
   return (
-    
     <main className="min-h-screen bg-gray-100 pb-16">
       <NavBar title="Add Item" />
       <div className="max-w-md mx-auto p-4 space-y-4">
@@ -46,38 +53,48 @@ export default function AddPage() {
           className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black placeholder-gray-400 transition"
           placeholder="Item name"
           value={name}
-          onChange={e => setName(e.target.value)}
+          onChange={(e) => setName(e.target.value)}
         />
 
         <input
           className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black placeholder-gray-400 transition"
           type="number"
           value={quantity}
-          onChange={e => setQuantity(Number(e.target.value))}
+          onChange={(e) => setQuantity(Number(e.target.value))}
           min={1}
           placeholder="Quantity"
         />
 
         <input
-          className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black placeholder-gray-400 transition"    
+          className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black placeholder-gray-400 transition"
           placeholder="SKU"
           value={sku}
-          onChange={e => setSku(e.target.value)}
+          onChange={(e) => setSku(e.target.value)}
           readOnly={!!searchParams.get("sku")}
         />
 
         <select
-          className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black placeholder-gray-400 transition" 
+          className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black placeholder-gray-400 transition"
           value={category}
-          onChange={e => setCategory(e.target.value as Category)}
+          onChange={(e) => setCategory(e.target.value as Category)}
         >
           <option value="Material">Material</option>
           <option value="Flowers">Flowers</option>
         </select>
 
-        <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black placeholder-gray-400 transition"
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleImageUpload}
+          className="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-black placeholder-gray-400 transition"
         />
-        {image && <img src={image} className="w-28 h-28 object-cover rounded-md" alt="preview" />}
+        {image && (
+          <img
+            src={image}
+            className="w-28 h-28 object-cover rounded-md"
+            alt="preview"
+          />
+        )}
 
         <button
           onClick={handleAdd}
@@ -86,7 +103,7 @@ export default function AddPage() {
           Add
         </button>
       </div>
-      <BottomNav/>
+      <BottomNav />
     </main>
   );
 }

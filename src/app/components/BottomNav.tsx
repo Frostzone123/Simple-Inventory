@@ -1,11 +1,45 @@
 "use client";
+
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { HomeIcon, PlusIcon } from "@heroicons/react/24/outline";
-import { Camera } from "lucide-react";
+import { Camera, UserPlus } from "lucide-react"; // UserPlus for register icon
+import { useEffect, useState } from "react";
+
+type User = {
+  id: string;
+  username: string;
+  isAdmin: boolean;
+};
 
 export function BottomNav() {
   const pathname = usePathname();
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          setUser(null);
+          return;
+        }
+
+        const res = await fetch("/api/auth/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (!res.ok) throw new Error("Failed to fetch user");
+        const data: User = await res.json();
+        setUser(data);
+      } catch (err) {
+        console.error(err);
+        setUser(null);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   const linkClasses = (path: string) =>
     `flex flex-col items-center ${
@@ -27,6 +61,13 @@ export function BottomNav() {
           <Camera size={24} />
           <span className="text-xs font-medium mt-1">Scan</span>
         </Link>
+        {/* Show Register only if user is admin */}
+        {user?.isAdmin && (
+          <Link href="/register" className={linkClasses("/register")}>
+            <UserPlus size={24} />
+            <span className="text-xs font-medium mt-1">Register</span>
+          </Link>
+        )}
       </div>
     </div>
   );

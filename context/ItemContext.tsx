@@ -1,94 +1,123 @@
 "use client";
 
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import { nanoid } from "nanoid";
 
 export type Category = "Material" | "Flowers";
 
-export type HistoryEntry = {
-  quantity: number;
-  date: string; // ISO string
-};
-
-export type Item = {
+export interface Item {
   id: string;
   name: string;
   quantity: number;
-  sku: string;
+  sku?: string;
   category: Category;
-  image?: string;
-  history: HistoryEntry[];
-};
+  image?: string; // filename
+  history?: { id: string; quantity: number; createdAt: string }[];
+}
 
-type ItemContextType = {
+interface ItemContextType {
   items: Item[];
-  addItem: (name: string, quantity: number, sku: string, category: Category, image?: string) => void;
-  updateItem: (id: string, updates: Partial<Omit<Item, "id" | "history">>) => void;
-  deleteItem: (id: string) => void;
-};
+  loading: boolean;
+  addItem: (item: Omit<Item, "id" | "history">) => Promise<void>;
+  updateItem: (id: string, updates: Partial<Omit<Item, "id" | "history">>) => Promise<void>;
+  deleteItem: (id: string) => Promise<void>;
+  fetchItems: () => Promise<void>;
+}
 
 const ItemContext = createContext<ItemContextType | undefined>(undefined);
 
-export function ItemProvider({ children }: { children: ReactNode }) {
-  const [items, setItems] = useState<Item[]>([]);
-
-  // Load items from localStorage on mount
-  useEffect(() => {
-    const stored = localStorage.getItem("items");
-    if (stored) {
-      try {
-        setItems(JSON.parse(stored));
-      } catch {
-        setItems([]);
-      }
-    }
-  }, []);
-
-  // Persist items to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem("items", JSON.stringify(items));
-  }, [items]);
-
-  const addItem = (name: string, quantity: number, sku: string, category: Category, image?: string) => {
-    const newItem: Item = {
-      id: nanoid(),
-      name,
-      quantity,
-      sku,
-      category,
-      image,
-      history: [{ quantity, date: new Date().toISOString() }],
-    };
-    setItems(prev => [...prev, newItem]);
-  };
-
-  const updateItem = (id: string, updates: Partial<Omit<Item, "id" | "history">>) => {
-    setItems(prev =>
-      prev.map(item => {
-        if (item.id !== id) return item;
-        const newQuantity = updates.quantity ?? item.quantity;
-        return {
-          ...item,
-          ...updates,
-          history: [...item.history, { quantity: newQuantity, date: new Date().toISOString() }],
-        };
-      })
-    );
-  };
-
-  const deleteItem = (id: string) => {
-    setItems(prev => prev.filter(item => item.id !== id));
-  };
-
-  return (
-    <ItemContext.Provider value={{ items, addItem, updateItem, deleteItem }}>
-      {children}
-    </ItemContext.Provider>
-  );
-}
-
-export function useItems() {
+export const useItems = () => {
   const context = useContext(ItemContext);
   if (!context) throw new Error("useItems must be used within an ItemProvider");
   return context;
+};
+
+interface ProviderProps {
+  children: ReactNode;
 }
+
+export const ItemProvider = ({ children }: ProviderProps) => {
+  const [items, setItems] = useState<Item[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const getToken = () => localStorage.getItem("token") || "";
+
+  const fetchItems = async () => {
+    setLoading(true);
+    try {
+      const token = getToken();
+      const res = await fetch("/api/items", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to fetch items");
+      const data: Item[] = await res.json();
+      setItems(data);
+    } catch (err) {
+      console.error("fetchItems error:", err);
+      setItems([]); // ensure items is at least an empty array
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const addItem = async (item: Omit<Item, "id" | "history">) => {
+    try {
+      const token = getToken();
+      const res = await fetch("/api/items", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(item),
+      });
+      if (!res.ok) throw new Error("Failed to add item");
+      await fetchItems();
+    } catch (err) {
+      console.error("addItem error:", err);
+    }
+  };
+
+  const updateItem = async (id: string, updates: Partial<Omit<Item, "id" | "history">>) => {
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/items/${id}`, {
+        method: "PUT",
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(updates),
+      });
+      if (!res.ok) throw new Error("Failed to update item");
+      await fetchItems();
+    } catch (err) {
+      console.error("updateItem error:", err);
+    }
+  };
+
+  const deleteItem = async (id: string) => {
+    try {
+      const token = getToken();
+      const res = await fetch(`/api/items/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Failed to delete item");
+      await fetchItems();
+    } catch (err) {
+      console.error("deleteItem error:", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  return (
+    <ItemContext.Provider
+      value={{ items, loading, addItem, updateItem, deleteItem, fetchItems }}
+    >
+      {children}
+    </ItemContext.Provider>
+  );
+};
